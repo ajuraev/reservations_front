@@ -53,6 +53,7 @@ function DialogForm({open, setOpen, reservInfo, setReserveInfo, setReservations,
 
         if(!title || !description) return
         
+        console.log(reservInfo)
         createReservation({
             room_id: reservInfo.room_id,
             from_time: reservInfo.from_time,
@@ -87,17 +88,17 @@ function DialogForm({open, setOpen, reservInfo, setReserveInfo, setReservations,
             const month = (today.getMonth() + 1).toString().padStart(2, '0');
             const day = today.getDate().toString().padStart(2, '0');
 
-            console.log(reservInfo)
             const formattedDate = `${year}-${month}-${day}`;
 
 
             //setReserveInfo([...reservInfo, {from_time: start, to_time: end, reservation_date: formattedDate}])
             setReserveInfo((prevReservInfo) => ({
                 ...prevReservInfo,
-                from_time: start,
-                to_time: end,
+                from_time: (new Date(start)).toString(),
+                to_time: (new Date(end)).toString(),
                 reservation_date: formattedDate,
             }));
+
             setShowCalendar(false)
             // if (title) {
             //     console.log(reservInfo)

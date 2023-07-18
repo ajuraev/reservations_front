@@ -107,7 +107,8 @@ function Main() {
                 {reservations.map((reservation) => (
                     <p key={reservation.id}>
                         {String(new Date(reservation.from_time).getHours()).padStart(2, '0')}:
-                        {String(new Date(reservation.from_time).getMinutes()).padStart(2, '0')} - 
+                        {String(new Date(reservation.from_time).getMinutes()).padStart(2, '0')}
+                        {' - '}  
                         {String(new Date(reservation.to_time).getHours()).padStart(2, '0')}:
                         {String(new Date(reservation.to_time).getMinutes()).padStart(2, '0')}
                     </p>                

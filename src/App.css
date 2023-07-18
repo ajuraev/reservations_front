@@ -1,5 +1,6 @@
 .App {
-  background-color: #282c34;
+  background-image: url('https://i.pinimg.com/originals/2b/0f/0f/2b0f0fb7dd3ad0cc2d3f8d1c7e82d294.jpg');
+  background-size: cover;
   min-height: 100vh;
   display: flex;
   font-size: calc(10px + 2vmin);

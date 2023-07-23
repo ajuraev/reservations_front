@@ -1,181 +1,138 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
+import { Button, Dialog, DialogTitle, DialogContent, Backdrop, CircularProgress, DialogActions, TextField } from '@mui/material';
 import api from './axiosConfig';
-import { Calendar, momentLocalizer } from 'react-big-calendar'
-import moment from 'moment'
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import Calendar from './Calendar';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateIsLoading, updateNewResInfo, updateReservations, addToReservations } from './reducers/rootSlice';
+import AutoComplete from './AutoComplete';
 
-
-function DialogForm({open, setOpen, reservInfo, setReserveInfo, setReservations, reservations, showCalendar, setShowCalendar}) {
+function DialogForm({open, setOpen, showCalendar, setShowCalendar}) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [invalidEmails, setInvalidEmails] = useState(false)
 
-  
-    const localizer = momentLocalizer(moment, { moment: (date) => moment.tz(date, 'Asia/Tashkent') });
+    const reservations = useSelector((state) => state.reservations);
+    const newResInfo = useSelector((state) => state.newResInfo)
+    const isLoading = useSelector((state) => state.isLoading)
 
-    const minTime = new Date();
-    minTime.setHours(8, 0, 0); // Set the minimum time to display (e.g., 8:00 AM)
+    const token = useSelector((state) => state.token)
 
-    const maxTime = new Date();
-    maxTime.setHours(20, 0, 0); // Set the maximum time to display (e.g., 6:00 PM)
+    const dispatch = useDispatch();
+
 
     const handleClose = () => {
         setTitle('')
         setDescription('')
+        dispatch(updateNewResInfo({
+          room_id: newResInfo.room_id
+        }))
+        //setShowCalendar(true)
         setOpen(false);
     };
+
+    const handleCloseButton = () => {
+      setTitle('')
+      setDescription('')
+      dispatch(updateNewResInfo({
+        room_id: newResInfo.room_id
+      }))
+      setShowCalendar(true)
+      //setOpen(false);
+  };
   
     const createReservation = async (info) => {
-        try {
-            const response = await api.post("/reservations/", info , {
-                headers: {
-                'Content-Type': 'application/json',
-                },
+      try {
+        dispatch(updateIsLoading(true))
+        const response = await api.post("/reservations/", info , {
+            headers: {
+            'Content-Type': 'application/json',
+            },
         });
-    
+  
         if (response.status === 200) {
             const data = await response.data;
             console.log("Reservation created successfully");
             console.log("Reservation ID:", data.reservation);
-            setReservations((prevReservations) => [...prevReservations, data.reservation]);
+            //setReservations((prevReservations) => [...prevReservations, data.reservation]);
+            dispatch(addToReservations(data.reservation));
+            dispatch(updateIsLoading(false))
+
             handleClose();
         } else {
-        console.error("Reservation creation failed");
+          dispatch(updateIsLoading(false))
+          console.error("Reservation creation failed");
         }
     } catch (error) {
-        console.error('Error creating reservation:', error);
-    }
+      dispatch(updateIsLoading(false))
+      console.error('Error creating reservation:', error);
+      }
     }
 
     const handleSubmit = async () => {
       // Handle form submission logic
-
-
-        if(!title || !description) return
+        if(!title || !description || invalidEmails) return
         
-        console.log(reservInfo)
+        console.log(newResInfo)
         createReservation({
-            room_id: reservInfo.room_id,
-            from_time: reservInfo.from_time,
-            to_time: reservInfo.to_time,
-            reservation_date: reservInfo.reservation_date,
+            room_id: newResInfo.room_id,
+            from_time: newResInfo.from_time,
+            to_time: newResInfo.to_time,
+            reservation_date: newResInfo.reservation_date,
+            participants: newResInfo.participants ? newResInfo.participants : [],
             title: title,
-            description: description
+            description: description,
+            access_token: token 
         })
         
 
     };
 
-    const mapReserves  = () => {
-        console.log(reservations)
-        const edited = reservations.map(reservation => ({
-            id: reservation.id,
-            title: reservation.title,
-            start: new Date(reservation.from_time),
-            end: new Date(reservation.to_time)
-          }));
-
-          console.log(edited)
-          return edited
-    }
-
-    const handleSelectSlot = ({ start, end }) => {
-            // const title = window.prompt('New Event name')
-            // const desc = window.prompt('Description')
-
-            const today = new Date(start);
-            const year = today.getFullYear();
-            const month = (today.getMonth() + 1).toString().padStart(2, '0');
-            const day = today.getDate().toString().padStart(2, '0');
-
-            const formattedDate = `${year}-${month}-${day}`;
-
-
-            //setReserveInfo([...reservInfo, {from_time: start, to_time: end, reservation_date: formattedDate}])
-            setReserveInfo((prevReservInfo) => ({
-                ...prevReservInfo,
-                from_time: (new Date(start)).toString(),
-                to_time: (new Date(end)).toString(),
-                reservation_date: formattedDate,
-            }));
-
-            setShowCalendar(false)
-            // if (title) {
-            //     console.log(reservInfo)
-            //     createReservation({
-            //         room_id: reservInfo.room_id,
-            //         from_time: start,
-            //         to_time: end,
-            //         reservation_date: formattedDate,
-            //         title: title,
-            //         description: desc
-            //     })
-            //     //setEvents((prev) => [...prev, { start, end, title }])
-            // }
-        }
-      
-    
-      const handleSelectEvent = useCallback(
-        (event) => window.alert(event.title),
-        []
-      )
-    
-      const { defaultDate, scrollToTime } = useMemo(
-        () => ({
-          defaultDate: new Date(2015, 3, 12),
-          scrollToTime: new Date(1970, 1, 1, 6),
-        }),
-        []
-      )
-  
     return (
       <div>
         <Dialog open={open} onClose={handleClose}
             maxWidth={showCalendar ? "100vw" : '50vw'}
             PaperProps={{
                 style: {
-                width: showCalendar ? '80vw' : '40vw', // Set the desired width
-                height: showCalendar ? '100vh' : '40vh', // Set the desired height
+                maxWidth: showCalendar ? null : '50vw',
+                width: showCalendar ? '80vw' : null, // Set the desired width
+                height: showCalendar ? '100vh' : null, // Set the desired height
                 },
             }}
         >
             {showCalendar ? (
-                <Calendar
-                localizer={localizer}
-                events={mapReserves()}
-                min={minTime}
-                max={maxTime}
-                onSelectEvent={handleSelectEvent}
-                onSelectSlot={handleSelectSlot}
-                selectable
-                scrollToTime={scrollToTime}
-                style={{ height: '100%', width: '100%' }}
-              />
+                <Calendar setShowCalendar={setShowCalendar}/>
             ) : (
                 <div>
-                    <DialogTitle>Meeting Description</DialogTitle>
-                    <DialogContent>
-                        <TextField
-                        label="Title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        fullWidth
-                        margin="normal"
-                        />
-                        <TextField
-                        label="Description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        fullWidth
-                        multiline
-                        rows={4}
-                        margin="normal"
-                        />
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={handleClose}>Cancel</Button>
-                        <Button onClick={handleSubmit} color="primary">Submit</Button>
-                    </DialogActions>
+                  <Backdrop
+                    sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                    open={isLoading}
+                    >
+                    <CircularProgress color="inherit" />
+                  </Backdrop>
+                  <DialogTitle>Meeting Description</DialogTitle>
+                  <DialogContent>
+                      <TextField
+                      label="Title"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      fullWidth
+                      margin="normal"
+                      />
+                      <TextField
+                      label="Description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      fullWidth
+                      multiline
+                      rows={4}
+                      margin="normal"
+                      />
+                      <AutoComplete setInvalidEmails={setInvalidEmails}/>
+                  </DialogContent>
+                  <DialogActions>
+                      <Button onClick={handleCloseButton}>Cancel</Button>
+                      <Button onClick={handleSubmit} color="primary">Submit</Button>
+                  </DialogActions>
                 </div>
             )}    
         </Dialog>

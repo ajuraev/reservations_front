@@ -1,12 +1,12 @@
-import { Button, Box, Alert, TextField, Stack } from '@mui/material';
+import { Button, Box, Alert, TextField, Stack, Backdrop, CircularProgress, Typography, createTheme } from '@mui/material';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { useState, useEffect, useRef } from 'react';
 import DialogForm from './DialogForm'
 import api from './axiosConfig';
 import dayjs from 'dayjs';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-
-
+import { useSelector, useDispatch } from 'react-redux';
+import { updateIsLoading, updateReservations, updateNewResInfo } from './reducers/rootSlice';
 
 function Main() {
     const [roomId, setRoomId] = useState('1');
@@ -14,21 +14,29 @@ function Main() {
     const [openDialog, setOpenDialog] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false)
     const [alertText, setAlertText] = useState('');
-    const [reservations, setReservations] = useState([])
-    const [reservInfo, setReservInfo] = useState({});
+    //const [reservations, setReservations] = useState([])
+    //const [reservInfo, setReservInfo] = useState({});
     const [startTime, setStartTime] = useState(null);
     const [endTime, setEndTime] = useState(null);
+
+    const reservations = useSelector((state) => state.reservations);
+    const users = useSelector((state) => state.users);
+    const isLoading = useSelector((state) => state.isLoading);
+
+
+    const dispatch = useDispatch();
     
 
 
-
-
     useEffect(() => {
+        dispatch(updateIsLoading(true))
         api.get(`/reservations/${roomId}`)
             .then((response) => response.data)
             .then((data) => {
                 console.log(data); // Process the retrieved reservations data
-                setReservations(data)
+                //setReservations(data)
+                dispatch(updateReservations(data));
+                dispatch(updateIsLoading(false))
             })
             .catch((error) => {
             console.error("Error fetching room reservations:", error);
@@ -93,12 +101,19 @@ function Main() {
 
         console.log(startTime.$d.getHours().toString())
 
-        setReservInfo({
+        dispatch(updateNewResInfo({
             room_id: roomId,
             from_time: startTime.$d.toString(),
             to_time: endTime.$d.toString(),
             reservation_date: formattedDate(new Date()),
-        })
+        }));
+
+        // setReservInfo({
+        //     room_id: roomId,
+        //     from_time: startTime.$d.toString(),
+        //     to_time: endTime.$d.toString(),
+        //     reservation_date: formattedDate(new Date()),
+        // })
         setShowCalendar(false)
         setOpenDialog(true)
         
@@ -108,13 +123,15 @@ function Main() {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'space-evenly' }}>
                 {reservations.filter((reservation) => reservation.date == formattedDate(new Date())).map((reservation) => (
-                    <p style={{marginRight: '3vw'}} key={reservation.id}>
-                        {String(new Date(reservation.from_time).getHours()).padStart(2, '0')}:
-                        {String(new Date(reservation.from_time).getMinutes()).padStart(2, '0')}
-                        {' - '}  
-                        {String(new Date(reservation.to_time).getHours()).padStart(2, '0')}:
-                        {String(new Date(reservation.to_time).getMinutes()).padStart(2, '0')}
-                    </p>                
+                    <Typography>
+                        <h3 style={{marginRight: '3vw'}} key={reservation.id}>
+                            {String(new Date(reservation.from_time).getHours()).padStart(2, '0')}:
+                            {String(new Date(reservation.from_time).getMinutes()).padStart(2, '0')}
+                            {' - '}  
+                            {String(new Date(reservation.to_time).getHours()).padStart(2, '0')}:
+                            {String(new Date(reservation.to_time).getMinutes()).padStart(2, '0')}
+                        </h3>   
+                    </Typography>             
                 ))}
             </Box>
         )
@@ -124,13 +141,16 @@ function Main() {
         const options = { weekday: 'long', month: 'long', day: 'numeric' };
         const today = new Date().toLocaleDateString('en-US', options);
 
-        return <h4>{today}</h4>
+        return <Typography><h2>{today}</h2></Typography>
     }
 
     const handleCalendarClick = () => {
-        setReservInfo({
+        // setReservInfo({
+        //     room_id: roomId
+        // })
+        dispatch(updateNewResInfo({
             room_id: roomId
-        })
+        }))
 
         setOpenDialog(true)
         setShowCalendar(true)
@@ -138,27 +158,33 @@ function Main() {
 
     return (
         <Box sx={{backgroundColor: 'rgba(0, 0, 0, 0.6)', minHeight: '100%', width: '100%', display: 'flex'}}>
-            <DialogForm showCalendar={showCalendar} setShowCalendar={(show) => setShowCalendar(show)} setReserveInfo={(info) => setReservInfo(info)} open={openDialog} setOpen={(newOpen) => setOpenDialog(newOpen)} setReservations={(reservations) => setReservations(reservations)} reservations={reservations} reservInfo={reservInfo}/>
-            <Box sx={{height: '100%', width: '80%', marginLeft: '1vw' }}>
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={isLoading}
+                >
+                <CircularProgress color="inherit" />
+            </Backdrop>
+            <DialogForm showCalendar={showCalendar} setShowCalendar={(show) => setShowCalendar(show)} open={openDialog} setOpen={(newOpen) => setOpenDialog(newOpen)}/>
+            <Box sx={{height: '100%', width: '70%', marginLeft: '1vw' }}>
                 <Stack direction="row">
-                <Button onClick={handleCalendarClick} sx={{ p: '0px', m: '0px' }}>
-                    <CalendarMonthIcon sx={{ fontSize: 160 }} />
-                </Button>
-                <Box>
-                    <h5>Today</h5>
-                    <CustomDate />
-                </Box>
+                    <Button onClick={handleCalendarClick} sx={{ p: '0px', m: '0px' }}>
+                        <CalendarMonthIcon sx={{ fontSize: 160 }} />
+                    </Button>
+                    <Box sx={{display: 'flex', flexDirection: 'column', justifyContent: 'center'}}>
+                        <Typography><h3>Today</h3></Typography>
+                        <CustomDate />
+                    </Box>
                 </Stack>
                 <Box sx={{position: 'absolute', bottom: '5vh'}}>
-                        <h4>Conference Room #1</h4>
-                        <h4>Reserved Times</h4>
+                        <Typography><h2>Conference Room #1</h2></Typography>
+                        <Typography><h2>Reserved Times</h2></Typography>
                         <ReservedTimes />
                 </Box>   
             </Box>
-            <Box sx={{width: '20%', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
-                <h3>New reservation</h3>
+            <Box sx={{width: '30%', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'}}>
+                <Typography><h3>New reservation</h3></Typography>
                 <Stack>
-                <p>Start</p>
+                    <Typography><p>Start</p></Typography>
                     <TimePicker
                         value={startTime}
                         onChange={(newValue) => setStartTime(newValue)}
@@ -166,8 +192,18 @@ function Main() {
                         ampm={false}
                         minTime={dayjs().hour(8).minute(0)}
                         maxTime={dayjs().hour(20).minute(0)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                sx={{
+                                  svg: { color: '#fff' },
+                                  input: { color: 'white' },
+                                }}
+                             />
+                         )}
+
                     />
-                    <p>End</p>
+                    <Typography><p>End</p></Typography>
                     <TimePicker
                         value={endTime}
                         onChange={(newValue) => setEndTime(newValue)}

@@ -6,3 +6,7 @@
   font-size: calc(10px + 2vmin);
   color: white;
 }
+
+.rbc-calendar {
+  font-family: 'Montserrat', sans-serif;
+}

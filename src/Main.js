@@ -29,6 +29,7 @@ function Main() {
 
 
     useEffect(() => {
+        
         dispatch(updateIsLoading(true))
         api.get(`/reservations/${roomId}`)
             .then((response) => response.data)

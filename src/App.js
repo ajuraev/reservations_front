@@ -69,20 +69,29 @@ function App() {
             });
 
         console.log(tokens.data);
-
-        api.post(`/user/emails/`,{
-          'access_token': tokens.data.token,
-          'client_id' : tokens.data.client_id,
-          'refresh_token' : tokens.data.refresh_token,
-          'client_secret' : tokens.data.client_secret
-        })
+        api.post('/verify/', tokens.data)
         .then(response => {
-          console.log(response.data.users)
-          dispatch(updateUsers(response.data.users))
-          dispatch(updateToken(tokens.data))
-          localStorage.setItem('token', JSON.stringify(tokens.data));
-
+          console.log(response)
+          if (response.data.users) {
+            console.log(response.data.users)
+            dispatch(updateUsers(response.data.users))
+            dispatch(updateToken(tokens.data))
+          }
         })
+        .catch(error => console.error(`Error: ${error}`));
+        // api.post(`/user/emails/`,{
+        //   'access_token': tokens.data.token,
+        //   'client_id' : tokens.data.client_id,
+        //   'refresh_token' : tokens.data.refresh_token,
+        //   'client_secret' : tokens.data.client_secret
+        // })
+        // .then(response => {
+        // console.log(response.data.users)
+        // dispatch(updateUsers(response.data.users))
+        // dispatch(updateToken(tokens.data))
+        // localStorage.setItem('token', JSON.stringify(tokens.data));
+
+        //})
     },
     onError: errorResponse => console.log(errorResponse),
   });

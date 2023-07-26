@@ -41,22 +41,13 @@ function App() {
 
     console.log(retrievedToken)
     if (retrievedToken) {
-      api.get('/verify?token=' + retrievedToken.token)
+      api.post('/verify/', retrievedToken)
       .then(response => {
         console.log(response)
-        if (response.data) {
-          console.log(response.data)
-          api.post(`/user/emails/`,{
-            'access_token': retrievedToken.token,
-            'client_id' : retrievedToken.client_id,
-            'refresh_token' : retrievedToken.refresh_token,
-            'client_secret' : retrievedToken.client_secret
-          })
-          .then(response => {
-            console.log(response.data.users)
-            dispatch(updateUsers(response.data.users))
-            dispatch(updateToken(retrievedToken))
-          })
+        if (response.data.users) {
+          console.log(response.data.users)
+          dispatch(updateUsers(response.data.users))
+          dispatch(updateToken(retrievedToken))
         }
       })
       .catch(error => console.error(`Error: ${error}`));

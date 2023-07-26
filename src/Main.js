@@ -9,7 +9,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateIsLoading, updateReservations, updateNewResInfo } from './reducers/rootSlice';
 
 function Main() {
-    const [roomId, setRoomId] = useState('1');
+    const [roomId, setRoomId] = useState('2');
     const [showAlert, setShowAlert] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false)

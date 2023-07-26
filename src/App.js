@@ -41,7 +41,7 @@ function App() {
 
     console.log(retrievedToken)
     if (retrievedToken) {
-      api.post('/verify/', retrievedToken)
+      api.get(`/verify?token=${retrievedToken.token}&refresh_token=${retrievedToken.refresh_token}`)
       .then(response => {
         console.log(response)
         if (response.data.users) {
@@ -69,13 +69,14 @@ function App() {
             });
 
         console.log(tokens.data);
-        api.post('/verify/', tokens.data)
+        api.get(`/verify?token=${tokens.data.token}&refresh_token=${tokens.data.refresh_token}`)
         .then(response => {
           console.log(response)
           if (response.data.users) {
             console.log(response.data.users)
             dispatch(updateUsers(response.data.users))
             dispatch(updateToken(tokens.data))
+            localStorage.setItem('token', JSON.stringify(tokens.data));
           }
         })
         .catch(error => console.error(`Error: ${error}`));
